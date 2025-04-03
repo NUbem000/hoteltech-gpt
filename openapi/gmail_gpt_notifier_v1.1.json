@@ -1,0 +1,77 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Gmail Notifier for JIRA Task Reminders",
+        "version": "1.1.0",
+        "description": "Permite enviar correos autom\u00e1ticos desde GPT para tareas JIRA seg\u00fan imputaci\u00f3n y vencimientos proporcionales."
+    },
+    "servers": [
+        {
+            "url": "https://gmail.googleapis.com"
+        }
+    ],
+    "paths": {
+        "/gmail/v1/users/me/messages/send": {
+            "post": {
+                "operationId": "send_reminder_email",
+                "summary": "Enviar correo de recordatorio",
+                "description": "Env\u00eda un correo al responsable de una tarea JIRA si no se han imputado horas o si se ha alcanzado el 50% o 75% del tiempo asignado sin avances.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "raw": {
+                                        "type": "string",
+                                        "description": "Mensaje MIME codificado en base64 URL-safe (HTML incluido)"
+                                    }
+                                },
+                                "required": [
+                                    "raw"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Correo enviado correctamente"
+                    },
+                    "403": {
+                        "description": "Permiso denegado, revisa el token OAuth y el alcance"
+                    }
+                },
+                "security": [
+                    {
+                        "oauth2": [
+                            "https://www.googleapis.com/auth/gmail.send"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "oauth2": {
+                "type": "oauth2",
+                "flows": {
+                    "authorizationCode": {
+                        "authorizationUrl": "https://accounts.google.com/o/oauth2/auth",
+                        "tokenUrl": "https://oauth2.googleapis.com/token",
+                        "scopes": {
+                            "https://www.googleapis.com/auth/gmail.send": "Enviar correos como el usuario autenticado"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "security": [
+        {
+            "oauth2": []
+        }
+    ]
+}
