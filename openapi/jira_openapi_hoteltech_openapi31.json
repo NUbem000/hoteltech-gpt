@@ -1,0 +1,153 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "JIRA Integration for HotelTech GPT",
+        "version": "1.0.0",
+        "description": "Permite crear, consultar y actualizar tareas t\u00e9cnicas desde JIRA Cloud para proyectos de infraestructura hotelera."
+    },
+    "servers": [
+        {
+            "url": "https://nubemsystems.atlassian.net"
+        }
+    ],
+    "paths": {
+        "/rest/api/3/project/search": {
+            "get": {
+                "operationId": "get_projects_list",
+                "summary": "Obtener lista de proyectos",
+                "responses": {
+                    "200": {
+                        "description": "Lista de proyectos obtenida correctamente"
+                    }
+                }
+            }
+        },
+        "/rest/api/3/issue": {
+            "post": {
+                "operationId": "create_issue",
+                "summary": "Crear tarea t\u00e9cnica",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "fields": {
+                                        "type": "object",
+                                        "properties": {
+                                            "project": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "key"
+                                                ]
+                                            },
+                                            "summary": {
+                                                "type": "string"
+                                            },
+                                            "description": {
+                                                "type": "string"
+                                            },
+                                            "issuetype": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "name"
+                                                ]
+                                            }
+                                        },
+                                        "required": [
+                                            "project",
+                                            "summary",
+                                            "issuetype"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "fields"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tarea creada con \u00e9xito"
+                    }
+                }
+            }
+        },
+        "/rest/api/3/issue/{issueIdOrKey}": {
+            "get": {
+                "operationId": "get_issue_status",
+                "summary": "Consultar estado de una tarea",
+                "parameters": [
+                    {
+                        "name": "issueIdOrKey",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Estado de la tarea recuperado correctamente"
+                    }
+                }
+            }
+        },
+        "/rest/api/3/issue/{issueIdOrKey}/assignee": {
+            "put": {
+                "operationId": "assign_user_to_issue",
+                "summary": "Asignar usuario a una tarea",
+                "parameters": [
+                    {
+                        "name": "issueIdOrKey",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "accountId": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "accountId"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "Usuario asignado correctamente"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {}
+    }
+}
