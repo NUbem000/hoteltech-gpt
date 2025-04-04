@@ -1,0 +1,106 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "HotelTech PDF Report Generator",
+        "version": "1.0.0",
+        "description": "Genera un informe PDF de tareas t\u00e9cnicas a partir de una lista JSON, y lo devuelve codificado en base64."
+    },
+    "paths": {
+        "/": {
+            "post": {
+                "operationId": "generate_pdf_report",
+                "summary": "Generar informe PDF de tareas",
+                "description": "Recibe una lista de tareas con nombre, proyecto, usuario, % de tiempo y fecha l\u00edmite, y genera un PDF descargable.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "tareas": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "tarea": {
+                                                    "type": "string"
+                                                },
+                                                "proyecto": {
+                                                    "type": "string"
+                                                },
+                                                "usuario": {
+                                                    "type": "string"
+                                                },
+                                                "porcentaje_tiempo": {
+                                                    "type": "integer"
+                                                },
+                                                "fecha_limite": {
+                                                    "type": "string",
+                                                    "format": "date"
+                                                }
+                                            },
+                                            "required": [
+                                                "tarea",
+                                                "proyecto",
+                                                "usuario",
+                                                "porcentaje_tiempo",
+                                                "fecha_limite"
+                                            ]
+                                        }
+                                    },
+                                    "email_destino": {
+                                        "type": "string",
+                                        "description": "Correo electr\u00f3nico al que se enviar\u00e1 el PDF generado (opcional)"
+                                    }
+                                },
+                                "required": [
+                                    "tareas"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "PDF generado correctamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "filename": {
+                                            "type": "string"
+                                        },
+                                        "pdf_base64": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "status",
+                                        "pdf_base64",
+                                        "filename"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "https://europe-west1-hoteltech-gmail-api.cloudfunctions.net/generatePdfReport"
+        }
+    ],
+    "components": {
+        "schemas": {}
+    }
+}
