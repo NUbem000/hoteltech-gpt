@@ -1,0 +1,30 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "HotelTech Reminder Trigger",
+        "version": "1.0.0",
+        "description": "Permite lanzar la funci\u00f3n hoteltechReminder desde GPT para activar notificaciones autom\u00e1ticas por correo."
+    },
+    "paths": {
+        "/": {
+            "get": {
+                "operationId": "trigger_hoteltech_reminder",
+                "summary": "Ejecutar recordatorio diario de tareas",
+                "description": "Llama a la funci\u00f3n Cloud que env\u00eda recordatorios por correo para tareas sin imputaci\u00f3n o pr\u00f3ximas a vencer.",
+                "responses": {
+                    "200": {
+                        "description": "Funci\u00f3n ejecutada correctamente"
+                    }
+                }
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "https://europe-west1-hoteltech-gmail-api.cloudfunctions.net/hoteltechReminder"
+        }
+    ],
+    "components": {
+        "schemas": {}
+    }
+}
