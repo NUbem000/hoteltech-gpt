@@ -1,92 +1,82 @@
-
-import base64
+import smtplib
 import json
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.header import Header
+from flask import Flask, request, jsonify
 import requests
-from datetime import datetime
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from email.mime.text import MIMEText
-from base64 import urlsafe_b64encode
 
-# Parámetros globales
-JIRA_URL = "https://nubemsystems.atlassian.net"
-JIRA_EMAIL = "USUARIO_ADMIN"
-JIRA_API_TOKEN = "TOKEN_API_JIRA"
-GMAIL_SENDER = "noreply@nubemsystems.es"
+# Datos fijos del correo de salida
+GMAIL_SENDER = "noreply@nubemsystems.es"  # Correo de salida
+GMAIL_PASSWORD = "nyzukergswjmtfrg"  # Contraseña de aplicación para el correo de salida
+JIRA_API_URL = "https://tujira.atlassian.net/rest/api/2/search"  # URL de la API de JIRA
 
-# Función: calcular porcentaje transcurrido
-def porcentaje_transcurrido(start_date, due_date):
-    fmt = "%Y-%m-%d"
-    hoy = datetime.now()
-    start = datetime.strptime(start_date, fmt)
-    due = datetime.strptime(due_date, fmt)
-    total = (due - start).days
-    trans = (hoy - start).days
-    return min(100, max(0, int(trans / total * 100))) if total > 0 else 100
+app = Flask(__name__)
 
-# Generar correo MIME codificado
-def generar_mensaje(destinatario, asunto, html_body):
-    mensaje = MIMEText(html_body, "html")
-    mensaje["to"] = destinatario
-    mensaje["from"] = GMAIL_SENDER
-    mensaje["subject"] = asunto
-    return {"raw": urlsafe_b64encode(mensaje.as_bytes()).decode()}
-
-# Autenticación Gmail con token guardado
-def enviar_correo_gmail(creds, mensaje):
-    url = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
-    headers = {"Authorization": f"Bearer {creds.token}", "Content-Type": "application/json"}
-    response = requests.post(url, headers=headers, json=mensaje)
-    print(f"Email enviado: {response.status_code} - {response.text}")
-    return response
-
-# Obtener tareas de todos los proyectos en JIRA
-def obtener_tareas_jira():
-    url = f"{JIRA_URL}/rest/api/3/search"
-    query = {
-        "jql": 'status != Done AND duedate IS NOT EMPTY AND startDate IS NOT EMPTY',
-        "maxResults": 100
+# Función para obtener tareas de JIRA
+def get_jira_tasks():
+    jira_query = {
+        "jql": "project = 'HotelTech' AND status != 'Done'",  # Personaliza la consulta JQL
+        "fields": ["summary", "assignee", "dueDate", "status", "progress"]
     }
-    response = requests.get(url, auth=(JIRA_EMAIL, JIRA_API_TOKEN), params=query)
-    return response.json().get("issues", [])
+    headers = {
+        "Authorization": "Basic <tu_token>",  # Reemplaza <tu_token> con el token de autenticación
+        "Content-Type": "application/json"
+    }
+    response = requests.post(JIRA_API_URL, json=jira_query, headers=headers)
+    return response.json()
 
-# Cargar plantilla HTML
-def cargar_plantilla(path, data):
-    with open(path, "r") as f:
-        html = f.read()
-    for k, v in data.items():
-        html = html.replace(f"{{{{{k}}}}}", v)
-    return html
+# Función para generar el cuerpo del correo con el progreso
+def generate_email_body(tasks):
+    body = "Resumen de tareas en progreso:\n\n"
+    for task in tasks:
+        body += f"Task: {task['summary']}\n"
+        body += f"Assigned to: {task['assignee']['displayName']}\n"
+        body += f"Due Date: {task['dueDate']}\n"
+        body += f"Status: {task['status']['name']}\n"
+        body += f"Progress: {task['progress']['progress']}%\n\n"
+    return body
 
-# MAIN
-def main(request):
-    creds = Credentials.from_authorized_user_file("token_gmail.json", ["https://www.googleapis.com/auth/gmail.send"])
-    tareas = obtener_tareas_jira()
+@app.route('/send_email', methods=['POST'])
+def send_email():
+    try:
+        # Obtener datos de la solicitud
+        data = request.get_json()
+        destinatario = data['destinatario']
+        
+        # Obtener tareas desde JIRA
+        tasks = get_jira_tasks()
+        
+        # Generar cuerpo del correo
+        body = generate_email_body(tasks['issues'])
+        
+        # Datos de autenticación SMTP
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
 
-    for tarea in tareas:
-        fields = tarea["fields"]
-        assignee = fields.get("assignee")
-        if not assignee: continue
+        # Crear el mensaje
+        msg = MIMEMultipart()
+        msg['From'] = GMAIL_SENDER
+        msg['To'] = destinatario  # Usamos el destinatario proporcionado
+        msg['Subject'] = Header("Informe de Progreso de Tareas HotelTech", 'utf-8')
 
-        datos = {
-            "usuario": assignee.get("displayName"),
-            "email": assignee.get("emailAddress"),
-            "proyecto": fields["project"]["name"],
-            "tarea": fields["summary"],
-            "fecha_limite": fields["duedate"],
-            "url_conversacion": "https://chat.openai.com/gpts/editor/hoteltech"
-        }
-        porcentaje = porcentaje_transcurrido(fields["startDate"], fields["duedate"])
+        # Cuerpo del mensaje con codificación UTF-8
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))  # Especificamos utf-8 para el cuerpo
 
-        if porcentaje >= 75:
-            plantilla = cargar_plantilla("recordatorio_75_porcentaje.html", datos)
-            asunto = "🚨 Alerta Crítica: 75% del tiempo transcurrido"
-        elif porcentaje >= 50:
-            plantilla = cargar_plantilla("recordatorio_50_porcentaje.html", datos)
-            asunto = "⚠️ Recordatorio: 50% del tiempo alcanzado"
-        else:
-            continue
+        # Enviar el correo
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()  # Seguridad de la conexión
+        server.login(GMAIL_SENDER, GMAIL_PASSWORD)
+        text = msg.as_string()
+        server.sendmail(GMAIL_SENDER, destinatario, text)  # Enviar el correo
+        server.quit()
 
-        mensaje = generar_mensaje(datos["email"], asunto, plantilla)
-        enviar_correo_gmail(creds, mensaje)
-    return "Proceso completado", 200
+        return jsonify({"status": "success", "message": "Correo enviado con éxito!"}), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
