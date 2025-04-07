@@ -1,0 +1,122 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Crear Estructura en JIRA",
+    "version": "1.0.0",
+    "description": "Permite crear tareas y subtareas en JIRA desde una estructura generada por GPT."
+  },
+  "paths": {
+    "/crearEstructuraEnJIRA": {
+      "post": {
+        "operationId": "crearEstructuraEnJIRA",
+        "summary": "Crear estructura de planificaci\u00f3n en JIRA",
+        "description": "Recibe un objeto con tareas, subtareas y responsables. Crea los issues en JIRA y devuelve los identificadores creados.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "project_key": {
+                    "type": "string"
+                  },
+                  "project_manager_id": {
+                    "type": "string"
+                  },
+                  "tareas": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "titulo": {
+                          "type": "string"
+                        },
+                        "descripcion": {
+                          "type": "string"
+                        },
+                        "asignado_a": {
+                          "type": "string"
+                        },
+                        "subtareas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "descripcion": {
+                                "type": "string"
+                              },
+                              "asignado_a": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "titulo",
+                              "asignado_a"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "titulo",
+                        "asignado_a"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "project_key",
+                  "project_manager_id",
+                  "tareas"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tareas creadas correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "created_keys": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "errores": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://europe-west1-hoteltech-gmail-api.cloudfunctions.net"
+    }
+  ],
+  "components": {
+    "schemas": {}
+  }
+}
